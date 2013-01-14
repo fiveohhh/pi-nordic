@@ -31,19 +31,16 @@ def main():
         for fileno, event in events:
             if fileno == radio_irq_pin.fileno():
                 # while(not(status & (1 << 6))):
-                status = radio.transaction(duplex([0xFF]))
-                print(status)
+                status = radio.transaction(duplex([0xFF]))[0][0]
                 pipe = status >> 1 & 0x07
                 print("Data arrived on pipe: " + str (pipe))
                 res = radio.transaction(duplex([0x60, 0xFF]))
-                print(type(res[0][1]))
-                print(res[0][1])
                 length = radio.transaction(duplex([0x60, 0xFF]))[0][1]
                 print("Length: " + str(length))
                 txData = [0x61]
                 for i in range(length + 1):
                     txData.append(0xff)
-                print(binascii.hexlify(radio.transaction(duplex(txData))[0][1:length+1]))
+                print("Data: " + str(binascii.hexlify(radio.transaction(duplex(txData))[0][1:length+1])))
                 radio.transaction(writing([0x27, 0x70]))
                 radio.transaction(writing([0xE1]))
                 radio.transaction(writing([0xE2]))

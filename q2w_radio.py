@@ -7,23 +7,48 @@ import time
 radio_irq_pin = Pin(13, Pin.In, Pin.Falling)
 
 def main():
+    # Initialize device 0 on bus zero
     radio = SPIDevice(0,0)
+    
+    # set data rate
     radio.transaction(writing([0x26, 0x06]))
+    
+    # reset/clear
     radio.transaction(writing([0x20, 0x70]))
+    
+    # Flush buffers
     radio.transaction(writing([0xE1]))
     radio.transaction(writing([0xE2]))
+
+    # Enable Shockburst on all channels
     radio.transaction(writing([0x21, 0x7f]))
-    radio.transaction(writing([0x2B,0xE7, 0xE7, 0xE7, 0xE7, 0xE7]))
+    
+    # Set pipe 1 rx address
     radio.transaction(writing([0x22, 0x03]))
+    radio.transaction(writing([0x2B,0xE7, 0xE7, 0xE7, 0xE7, 0xE7]))
+
+    # Enable pipe 1
+    radio.transaction(writing([0x22, 0x02]))
+
+    # Enable dynamic payloads
     radio.transaction(writing([0x3D, 0x04]))
-    radio.transaction(writing([0x3C, 0x03]))
+    # On pipe 1
+    radio.transaction(writing([0x3C, 0x02]))
+    
+    # Power up and set to RX
     radio.transaction(writing([0x20, 0x0B]))
+
+    # Wait for crystal (really only needs to be ~ 4ms
     time.sleep(1)
+
+    # Reset/clear
     radio.transaction(writing([0x27, 0x70]))
+    
+    # Flush buffers
     radio.transaction(writing([0xE1]))
     radio.transaction(writing([0xE2]))
-    radio.transaction(writing([0x22, 0x03]))
-    status = radio.transaction(duplex([0xff]))[0][0]
+    
+    
     epoll = select.epoll()
     epoll.register(radio_irq_pin, select.EPOLLIN | select.EPOLLET)
     while True:
